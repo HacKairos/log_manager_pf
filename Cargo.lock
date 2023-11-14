@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "Log_Manager_PF"
+name = "log_manager_pf"
 version = "0.1.0"
