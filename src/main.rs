@@ -1,23 +1,46 @@
-use std::io;
+use chrono::prelude::*;
+use reqwest;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::io::{self, BufRead};
+use tokio::time::{sleep, Duration};
 
-fn main() {
-    // Pede para o usuário digitar um nome
-    println!("Digite um nome:");
-    let mut name = String::new();
-    io::stdin().read_line(&mut name).expect("Falha ao ler a entrada do usuário.");
-    // Remove quebras de linha e espaços em branco do nome
-    name = name.trim().to_string();
-    // Loop que itera 27 vezes
-    for count in 0..27 {
-        // Gera um novo nome a partir do nome atual
-        let new_name = name.chars()
-        // Mapeia cada caractere do nome atual para um novo caractere
-        .map(|c| if c == 'a' { 'z' } else { (((c as u8) - b'a' + 25) % 26 + b'a') as char })
-        // Junta os caracteres em uma string
-        .collect::<String>();
-        // Imprime o número da iteração e o novo nome gerado
-        println!("{} - The new name is: {}", count, name);
-        // Atribui o novo nome à variável 'name' para a próxima iteração
-        name = new_name;
+async fn send_log_to_endpoint(log: &str) -> Result<(), reqwest::Error> {
+    let client = reqwest::Client::new();
+    let res = client
+        .post("http://your-endpoint.com")
+        .body(log.to_string())
+        .send()
+        .await?;
+
+    println!("Response: {}", res.status());
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    loop {
+        let stdin = io::stdin();
+
+        let dt = Local::now();
+        let filename = format!("output_{}.txt", dt.format("%Y-%m-%d"));
+
+        let mut file = OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(&filename)
+            .unwrap();
+
+        for line in stdin.lock().lines() {
+            let line = line.unwrap();
+            writeln!(file, "{}", line).unwrap();
+
+            // Enviar log para o endpoint
+            let _ = send_log_to_endpoint(&line).await;
+        }
+
+        // Aguarde um pouco antes de verificar novos logs
+        sleep(Duration::from_secs(3)).await;
     }
 }

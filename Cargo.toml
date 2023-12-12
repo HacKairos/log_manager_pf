@@ -3,6 +3,14 @@ name = "log_manager_pf"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+chrono = "0.4.31"
+reqwest = "0.11.22"
+tokio = { version = "1.35.0", features = ["full"] }
+syslog = "6.1.0"
+
+[profile.release]
+lto = true
+opt-level = 'z'
+codgen-units = 1
+strip = true
